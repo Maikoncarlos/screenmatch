@@ -10,6 +10,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -36,13 +37,13 @@ public class ScreenmatchApplication implements CommandLineRunner {
         var dadosEpisodio = converteDados.obterDados(json, DadosEpisodio.class);
         System.out.println(dadosEpisodio);
 
-        var temporadas = new ArrayList<>();
+        List<DadosTemporadas> temporadas = new ArrayList<>();
         for (int i = 1; i <= dadosSerie.totalTemporadas(); i++) {
             json = consumoApi.obterDados("https://www.omdbapi.com/?t=gilmore+girls&season=" + i + "&apikey=6585022c");
             var dadosTemporada = converteDados.obterDados(json, DadosTemporadas.class);
             temporadas.add(dadosTemporada);
         }
         temporadas.forEach(System.out::println);
-
+        temporadas.forEach(t-> t.episodios().forEach(e -> System.out.println(e.titulo())));
     }
 }
