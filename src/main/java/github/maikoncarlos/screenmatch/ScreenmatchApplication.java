@@ -3,6 +3,7 @@ package github.maikoncarlos.screenmatch;
 import github.maikoncarlos.screenmatch.model.DadosEpisodio;
 import github.maikoncarlos.screenmatch.model.DadosSerie;
 import github.maikoncarlos.screenmatch.model.DadosTemporadas;
+import github.maikoncarlos.screenmatch.model.Episodio;
 import github.maikoncarlos.screenmatch.service.ConsumoApi;
 import github.maikoncarlos.screenmatch.service.ConverteDados;
 import org.springframework.boot.CommandLineRunner;
@@ -14,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 public class ScreenmatchApplication implements CommandLineRunner {
@@ -27,7 +29,7 @@ public class ScreenmatchApplication implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         var consumoApi = new ConsumoApi();
-        var json = consumoApi.obterDados("https://www.omdbapi.com/?t=gilmore+girls&apikey=6585022c");
+        var json = consumoApi.obterDados("https://www.omdbapi.com/?t=euphoria&apikey=6585022c");
         System.out.println(json + "\n");
 
 
@@ -35,14 +37,14 @@ public class ScreenmatchApplication implements CommandLineRunner {
         var dadosSerie = converteDados.obterDados(json, DadosSerie.class);
         System.out.println(dadosSerie + "\n");
 
-        json = consumoApi.obterDados("https://www.omdbapi.com/?t=gilmore+girls&season=1&episode=2&apikey=6585022c");
+        json = consumoApi.obterDados("https://www.omdbapi.com/?t=euphoria&season=1&episode=2&apikey=6585022c");
         var dadosEpisodio = converteDados.obterDados(json, DadosEpisodio.class);
         System.out.println(dadosEpisodio + "\n");
 
 
         List<DadosTemporadas> temporadas = new ArrayList<>();
         for (int i = 1; i <= dadosSerie.totalTemporadas(); i++) {
-            json = consumoApi.obterDados("https://www.omdbapi.com/?t=gilmore+girls&season=" + i + "&apikey=6585022c");
+            json = consumoApi.obterDados("https://www.omdbapi.com/?t=euphoria&season=" + i + "&apikey=6585022c");
             var dadosTemporada = converteDados.obterDados(json, DadosTemporadas.class);
             temporadas.add(dadosTemporada);
         }
@@ -50,9 +52,10 @@ public class ScreenmatchApplication implements CommandLineRunner {
         System.out.println("\n");
 
 
-        //
+        //Aqui nós pegamos a lista dentro da lista( flatMap )
         List<DadosEpisodio> episodios = temporadas.stream()
-                .flatMap(t -> t.episodios().stream())
+                .flatMap(t -> t.episodios()
+                .stream())
                 .toList();
         System.out.println("\n");
 
@@ -64,18 +67,24 @@ public class ScreenmatchApplication implements CommandLineRunner {
         System.out.println("\n");
 
 
-        episodios.stream()
-                .filter(e -> Objects.equals(e.dataLancamento(), "2006-09-26"))
-                .forEach(System.out::println);
+        episodios.stream().filter(e -> Objects.equals(e.dataLancamento(), "2006-09-26")).forEach(System.out::println);
         System.out.println("\n");
 
 
-        episodios.stream()
-                .limit(20) //limita somente aos dez primeiros
+        episodios.stream().limit(20) //limita somente aos dez primeiros
                 .filter(e -> e.titulo().startsWith("S")) //filtra somente os que iniciam com a letra S
                 .map(e -> e.titulo().toUpperCase()) //mapeia / transforma todas letras para maiusculas
                 .forEach(System.out::println); //percorre a lista de episodios e imprime cada um
         System.out.println("\n");
 
+        List<Episodio> episodioList = temporadas.stream()
+                .flatMap(t -> t.episodios()
+                        .stream()
+                        .map(d -> new Episodio(t.numero(), d)))
+                .collect(Collectors.toList());
+
+        episodioList.stream()
+                .filter(e -> Objects.equals(e.getNumero(), 1))
+                .forEach(System.out::println);
     }
 }
