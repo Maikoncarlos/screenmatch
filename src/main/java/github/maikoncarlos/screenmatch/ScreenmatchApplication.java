@@ -10,12 +10,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 @SpringBootApplication
 public class ScreenmatchApplication implements CommandLineRunner {
@@ -27,7 +28,7 @@ public class ScreenmatchApplication implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         var consumoApi = new ConsumoApi();
         var json = consumoApi.obterDados("https://www.omdbapi.com/?t=euphoria&apikey=6585022c");
         System.out.println(json + "\n");
@@ -81,10 +82,23 @@ public class ScreenmatchApplication implements CommandLineRunner {
                 .flatMap(t -> t.episodios()
                         .stream()
                         .map(d -> new Episodio(t.numero(), d)))
-                .collect(Collectors.toList());
+                .toList();
 
         episodioList.stream()
                 .filter(e -> Objects.equals(e.getNumero(), 1))
                 .forEach(System.out::println);
+        System.out.println("\n");
+
+
+        episodioList.stream()
+                .filter(e -> e.getDataLancamento() != null &&
+                        e.getDataLancamento().isAfter(LocalDate.of(2019, 1, 1)) &&
+                        e.getTitulo().length() > 5 )
+                .limit(10)
+                .forEach(e -> System.out.println(
+                        "Temporada:" + e.getTemporada() +
+                        "  |  Episódio:" + e.getTitulo() +
+                        "  |  Data Lançamento:" + e.getDataLancamento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                ));
     }
 }
