@@ -10,8 +10,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 @SpringBootApplication
@@ -27,15 +28,17 @@ public class ScreenmatchApplication implements CommandLineRunner {
     public void run(String... args) throws Exception {
         var consumoApi = new ConsumoApi();
         var json = consumoApi.obterDados("https://www.omdbapi.com/?t=gilmore+girls&apikey=6585022c");
-        System.out.println(json);
+        System.out.println(json + "\n");
+
 
         var converteDados = new ConverteDados();
         var dadosSerie = converteDados.obterDados(json, DadosSerie.class);
-        System.out.println(dadosSerie);
+        System.out.println(dadosSerie + "\n");
 
         json = consumoApi.obterDados("https://www.omdbapi.com/?t=gilmore+girls&season=1&episode=2&apikey=6585022c");
         var dadosEpisodio = converteDados.obterDados(json, DadosEpisodio.class);
-        System.out.println(dadosEpisodio);
+        System.out.println(dadosEpisodio + "\n");
+
 
         List<DadosTemporadas> temporadas = new ArrayList<>();
         for (int i = 1; i <= dadosSerie.totalTemporadas(); i++) {
@@ -43,7 +46,36 @@ public class ScreenmatchApplication implements CommandLineRunner {
             var dadosTemporada = converteDados.obterDados(json, DadosTemporadas.class);
             temporadas.add(dadosTemporada);
         }
-        temporadas.forEach(System.out::println);
-        temporadas.forEach(t-> t.episodios().forEach(e -> System.out.println(e.titulo())));
+        temporadas.stream().limit(1).forEach(System.out::println);
+        System.out.println("\n");
+
+
+        //
+        List<DadosEpisodio> episodios = temporadas.stream()
+                .flatMap(t -> t.episodios().stream())
+                .toList();
+        System.out.println("\n");
+
+        episodios.stream()
+                .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A"))
+                .limit(10)
+                .sorted(Comparator.comparing(DadosEpisodio::avaliacao).reversed())
+                .forEach(System.out::println);
+        System.out.println("\n");
+
+
+        episodios.stream()
+                .filter(e -> Objects.equals(e.dataLancamento(), "2006-09-26"))
+                .forEach(System.out::println);
+        System.out.println("\n");
+
+
+        episodios.stream()
+                .limit(20) //limita somente aos dez primeiros
+                .filter(e -> e.titulo().startsWith("S")) //filtra somente os que iniciam com a letra S
+                .map(e -> e.titulo().toUpperCase()) //mapeia / transforma todas letras para maiusculas
+                .forEach(System.out::println); //percorre a lista de episodios e imprime cada um
+        System.out.println("\n");
+
     }
 }
